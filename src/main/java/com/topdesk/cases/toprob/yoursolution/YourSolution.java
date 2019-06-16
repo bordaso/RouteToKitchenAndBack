@@ -23,6 +23,9 @@ import com.topdesk.cases.toprob.Opportunity;
 import com.topdesk.cases.toprob.Solution;
 import com.topdesk.cases.toprob.Step;
 
+// Implemented by BORDASO
+// 2019.06.16.
+// Budapest, Hungary
 public class YourSolution implements Solution {
 	
 	private int TIME=0;
@@ -37,8 +40,6 @@ public class YourSolution implements Solution {
 	private Coordinate robiRoom;
 	private Coordinate kitchen;
 	private Coordinate robi;
-	
-	private Coordinate buggy;
 	
 	private List<Step> steps = new ArrayList<>();
 	private List<Opportunity> allOpportunities = new ArrayList<>();
@@ -75,65 +76,64 @@ public class YourSolution implements Solution {
 		
 		optimalRouteValueCalculator();
 		
-		
 		steps.add(new Step(robiRoom));
 		
-		
-		//&& routesWithValues.size()<2
-//		routesWithValues.put(route, route.size());
-//		
-//		if(route.size()>optimalRouteValue && routesWithValues.size()<2) {			
-//			routeOptimizer=true;
-//			route= new ArrayList<>();
-//			steps = new ArrayList<>();
-//			robi = robiRoom;
-//			TIME = ORIGINAL_TIME;
-//			steps.add(new Step(robiRoom));
-//			routePlanner();
-//		}
-//		
-//		if(!routesWithValues.isEmpty()) {
-//		route =	routesWithValues.entrySet().stream()
-//			.collect(Collectors.maxBy((o1, o2) -> o2.getValue()-o1.getValue()))
-//			.get()
-//			.getKey();
-//		}
-		
+		// Recursively valuate the opportunities from the current step, chooses the best and creates a new step
 		routePlanner();
+		
+		// Switch the preferred route direction, so the valuation will be different and might lead to a better/shorter solution
+		routeOptimizer1();
+		
+		// Ran out of time to implement, but another optimization could be to find steps which not immediately
+		//following each other BUT actually neighbours, this way shorten the length of the route
+	//	routeOptimizer2();
 		
 		mirrorTheRouteToGoBack(route);
 		
 
 	return	route;
-
 	}
 
-	// REPEAT HERE AS A RECURSIVE METHOD
+
 	private List<Instruction>  routePlanner() {
-		
-		// ITT MÁR TUDNOM KELL HOVA LÉPEK A LEGJOBBNAK KELL ITT LENNIE!!!!!!!!!!
-		Step nextStep = opportunityValuation(routeOptimizer);
-		
+				
+		Step nextStep = opportunityValuation(routeOptimizer);		
 		steps.add(nextStep);
-		
-		//ITT LÉPEK
 		robi = nextStep.getMyCoordinate();
 		
-		// ITT ÁLLÍTOM A ROUTOT
+		// Set the route
 		calculateRouteInstructionAndBugCheckAndTimeSet();
 		
-		
-		
-		// addig számol amig a konyhába nem érünk EGYENLŐRE
+		//Calculate till the robi reach the kitchen
 		while(!robi.equals(kitchen)) {
 			routePlanner();
 		}
 		
-	///	routeShortCutter(); <<<<<<<<<<<?????????????????
-		
-
-		
 		return route;
+	}
+	
+private void routeOptimizer1() {
+		
+		routesWithValues.put(route, route.size());
+		
+		if(route.size()>optimalRouteValue) {			
+			routeOptimizer=true;
+			route= new ArrayList<>();
+			steps = new ArrayList<>();
+			robi = robiRoom;
+			TIME = ORIGINAL_TIME;
+			steps.add(new Step(robiRoom));
+			routePlanner();
+			routesWithValues.put(route, route.size());
+		}
+		
+		if(!routesWithValues.isEmpty()) {
+		route =	routesWithValues.entrySet().stream()
+			.collect(Collectors.maxBy((o1, o2) -> o2.getValue()-o1.getValue()))
+			.get()
+			.getKey();
+		}
+		
 	}
 
 	private void calculateRouteInstructionAndBugCheckAndTimeSet() {		
@@ -152,24 +152,27 @@ public class YourSolution implements Solution {
 		//Create a list from all available moving options
 		List<Instruction> instructionList = Arrays.asList(Instruction.values());
 		
-		//Create a List whith all Opportunities from the current (==robi) coordinate and Valuate each Opportunity
+		//Create a List with all Opportunities from the current (==robi) coordinate and Valuate each Opportunity
 		List<Opportunity> instructionToOpportunityList = instructionList.stream()
 				.filter(i-> !i.equals(Instruction.PAUSE))
 				.map(i-> new Opportunity(i.execute(robi), i))
 				.peek(o-> {opportunityOperation(o, startFromAnotherDirection);})
 				.collect(Collectors.toList());
 		
+		//Set the latest step FROM where we valuate the opportunities, with the valuated opportunites
 		steps.get(steps.size()-1).getOpportunitiesSet().clear();
 		steps.get(steps.size()-1).getOpportunitiesSet().addAll(instructionToOpportunityList);
 		steps.get(steps.size()-1).setOpportunitiesStepReference();
 		
+		// Stepback check and best opportunity calculation for new Step creation
 		Optional<Opportunity> bestOpportunity = haveIVisitedThisCoordinateThenGetBestOpp(instructionToOpportunityList);			
 		
 		Step nextStep = new Step(bestOpportunity.get()); 
 		
-		return nextStep; //SET BREAKPOINT HERE TO TEST<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+		return nextStep; //best place to debug
 	}
 
+	// Valutation logic
 	private void opportunityOperation(Opportunity o, boolean startFromAnotherDirection) {		
 		
 		if(wouldRobiFallInAHole(o.getPoint()) || wouldRobiFallofTheGrid(o.getPoint())){
@@ -202,12 +205,14 @@ public class YourSolution implements Solution {
 	
 	private Optional<Opportunity> haveIVisitedThisCoordinateThenGetBestOpp(List<Opportunity> valuatedOpportunityList) {
 
+		//See all opportunities that has created all previous steps
 		allOpportunities=steps.stream().map(s-> s.getStepCreatorOpportunity()).collect(Collectors.toList());
 		
 		//Never step FORWARD to a coordinate which has been already visited, it can be revisited BACKWARD
 		return stepBackCalculation(valuatedOpportunityList);	
 	}
 	
+	// Stepback logic1 -> to only where we came from
 	private Optional<Opportunity> stepBackCalculation(List<Opportunity> valuatedOpportunityList) {
 		
 		Optional<Opportunity> bestOpportunityFiltered =  valuatedOpportunityList.stream()	
@@ -223,6 +228,7 @@ public class YourSolution implements Solution {
 		return 	bestOpportunityFiltered;		
 	}
 	
+	// Stepback logic2
 	private Optional<Opportunity> prepareStepBack() {
 		Step previousStep = steps.get(steps.size()-2);
 		previousStep.getopportunitiesSortedDesc().get(0).setValue(-99);
@@ -240,6 +246,7 @@ public class YourSolution implements Solution {
 		return Optional.of(previousStep.getopportunitiesSortedDesc().get(0));
 	}
 	
+	//Setup the general/best direction to follow at each Step to reach the kitchen
 	private List<Instruction> calculateGeneralDirection(boolean reverseListItem) {
 		int valX = kitchen.getX() - robi.getX();
 		int valY = kitchen.getY() - robi.getY();
@@ -259,9 +266,10 @@ public class YourSolution implements Solution {
 			followMe.add(Instruction.SOUTH);
 		}
 		
-		//System.out.println("PRE-ORDER "+followMe);		
-		followMe = reverseListItem? followMe.stream().collect(()-> new LinkedList<Instruction>(), (ac, e)->{ac.offerFirst(e);}, (ac, e)->{ac.addAll(e);}):followMe;
-	//	System.out.println("POST-ORDER "+followMe);
+		int num=followMe.size()-1;					
+		followMe = reverseListItem?  IntStream.rangeClosed(0, num)
+			.mapToObj(i->followMe.get(num-i))
+			.collect(()->new ArrayList<Instruction>(), (ac, e)->{ac.add(e);}, (ac, ac2)->{ac.addAll(ac2);}):followMe;
 
 		return followMe;
 	}
@@ -274,37 +282,6 @@ public class YourSolution implements Solution {
 		return (modifiedCoordinate.getX() > widthX || modifiedCoordinate.getY() > heightY) 
 				|| 
 				(modifiedCoordinate.getX() < 0 || modifiedCoordinate.getY() < 0);
-	}
-	
-	private Coordinate instructionToCoordinate(Instruction inputInstruction) {
-		switch(inputInstruction) {
-		case NORTH:
-			return decreaseYgoNorth(robi);
-		case SOUTH:
-			return increaseYgoSouth(robi);
-		case WEST:
-			return decreaseXgoWest(robi);
-		case EAST:
-			return increaseXgoEast(robi);
-		default:
-			return robi;
-		}
-	}
-	
-	private Coordinate increaseXgoEast(Coordinate inputCoordinate) {
-		return new Coordinate(inputCoordinate.getX() + 1, inputCoordinate.getY());
-	}
-
-	private Coordinate decreaseXgoWest(Coordinate inputCoordinate) {
-		return new Coordinate(inputCoordinate.getX() - 1, inputCoordinate.getY());
-	}
-
-	private Coordinate increaseYgoSouth(Coordinate inputCoordinate) {
-		return new Coordinate(inputCoordinate.getX(), inputCoordinate.getY() + 1);
-	}
-
-	private Coordinate decreaseYgoNorth(Coordinate inputCoordinate) {
-		return new Coordinate(inputCoordinate.getX(), inputCoordinate.getY() - 1);
 	}
 	
 	private void mirrorTheRouteToGoBack(List<Instruction> route) {
@@ -325,7 +302,7 @@ public class YourSolution implements Solution {
 		int num=route.size()-1;		
 		IntStream.rangeClosed(0, num)
 			.mapToObj(i->route.get(num-i))
-			.collect(()->mirrorRoute, (ac, e)->{mirrorCalculator(ac, e);}, (ac, e)->{ac.addAll(e);});
+			.collect(()->mirrorRoute, (ac, e)->{mirrorCalculator(ac, e);}, (ac, ac2)->{ac.addAll(ac2);});
 		
 		route.addAll(mirrorRoute);	
 	}
@@ -362,6 +339,10 @@ public class YourSolution implements Solution {
 		ac.add(e);
 		increaseTIME();		
 	}
+	
+	private void routeOptimizer2() {		
+		routeShortCutter();
+		}
 
 	private void routeShortCutter() {
 		
@@ -369,11 +350,8 @@ public class YourSolution implements Solution {
 			for(int z =steps.size();z>0;z--) {
 				areYouNeighbour(steps.get(a), steps.get(z));
 			}
-		}
-		
-		
-	}
-	
+		}				
+	}	
 	
 	private void areYouNeighbour(Step earlyStep, Step laterStep) {
 		
@@ -382,10 +360,8 @@ public class YourSolution implements Solution {
 		instructionList.stream()
 		.filter(i-> i.execute(laterStep.getMyCoordinate()).equals(earlyStep.getMyCoordinate()))
 		.peek(e -> {neighbourValueCalculator(earlyStep, laterStep);})
-		.count();
-		
-	}
-	
+		.count();		
+	}	
 	
 	private void neighbourValueCalculator(Step earlyStep, Step laterStep) {
 		
@@ -398,7 +374,6 @@ public class YourSolution implements Solution {
 	   stepPairs.add(laterStep);
 	   stepPairsMap.put(stepPairs, value);		
 	}
-	
 	
 	private void optimalRouteValueCalculator() {
 		int xCalc = kitchen.getX()-robiRoom.getX();

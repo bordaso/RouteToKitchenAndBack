@@ -8,10 +8,9 @@ import java.util.Set;
 
 public class Step {
 	
-	private final Opportunity stepCreatorOpportunity;
-	
+	private final Opportunity stepCreatorOpportunity;	
 	private final Coordinate myCoordinate;
-	private Coordinate nextStepCoordinate;
+	
 	private Set<Opportunity> opportunitiesSet = new HashSet<>();
 	private List<Opportunity> opportunitiesSortedDesc;
 
@@ -26,8 +25,6 @@ public class Step {
 		this.stepCreatorOpportunity=new Opportunity(initialStepRobiRoom, Instruction.PAUSE);
 		this.myCoordinate = initialStepRobiRoom;
 	}
-	
-
 
 	public Set<Opportunity> getOpportunitiesSet() {
 		return opportunitiesSet;
@@ -49,14 +46,6 @@ public class Step {
 	
 	public Coordinate getMyCoordinate() {
 		return myCoordinate;
-	}
-	
-	private void setNextStepCoordinate() {		
-		this.nextStepCoordinate = getopportunitiesSortedDesc().get(0).getPoint();
-	}
-
-	public Coordinate getNextStepCoordinate() {
-		return nextStepCoordinate;
 	}
 
 	public Opportunity getStepCreatorOpportunity() {
@@ -90,6 +79,8 @@ public class Step {
 
 	@Override
 	public String toString() {
-		return "Step [opportunities=" + opportunitiesSortedDesc + "]";
+		return "Step [stepCreatorOpportunity=" + stepCreatorOpportunity + ", myCoordinate=" + myCoordinate + "]";
 	}
+
+	
 }

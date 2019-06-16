@@ -30,7 +30,6 @@ public class Opportunity {
 	}
 
 	public void setValue(int value) {
-		//extra lépések --- közeleéds a célhoz? --rangsorolás
 		this.value = value;
 	}
 
