@@ -1,3 +1,6 @@
+Credits for the task goes to TopDesk!
+Solution implemented by BORDASO.
+
 == The Story ==
 
 A robot called Rob lives on a grid. 
